@@ -26,8 +26,13 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
   bool _isSaving = true;
   bool _saved = false;
 
-  double get _score =>
-      (widget.completedSteps / widget.totalSteps) * 100;
+  double get _score {
+    if (widget.totalSteps <= 0) return 0;
+    final completed = widget.completedSteps
+        .clamp(0, widget.totalSteps)
+        .toDouble();
+    return (completed / widget.totalSteps) * 100;
+  }
 
   Color get _scoreColor {
     if (_score >= 80) return AppTheme.success;
@@ -103,7 +108,9 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
             if (_isSaving)
               Container(
                 padding: const EdgeInsets.symmetric(
-                    horizontal: 16, vertical: 8),
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.orange.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(20),
@@ -112,23 +119,27 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
                   mainAxisSize: MainAxisSize.min,
                   children: [
                     SizedBox(
-                      width: 14, height: 14,
+                      width: 14,
+                      height: 14,
                       child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.orange),
+                        strokeWidth: 2,
+                        color: Colors.orange,
+                      ),
                     ),
                     SizedBox(width: 8),
-                    Text('Saving result...',
-                        style: TextStyle(
-                            color: Colors.orange,
-                            fontSize: 13)),
+                    Text(
+                      'Saving result...',
+                      style: TextStyle(color: Colors.orange, fontSize: 13),
+                    ),
                   ],
                 ),
               )
             else
               Container(
                 padding: const EdgeInsets.symmetric(
-                    horizontal: 16, vertical: 8),
+                  horizontal: 16,
+                  vertical: 8,
+                ),
                 decoration: BoxDecoration(
                   color: AppTheme.success.withOpacity(0.1),
                   borderRadius: BorderRadius.circular(20),
@@ -136,13 +147,12 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
                 child: const Row(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(Icons.cloud_done,
-                        color: AppTheme.success, size: 16),
+                    Icon(Icons.cloud_done, color: AppTheme.success, size: 16),
                     SizedBox(width: 8),
-                    Text('Result saved to Firebase',
-                        style: TextStyle(
-                            color: AppTheme.success,
-                            fontSize: 13)),
+                    Text(
+                      'Result saved to Firebase',
+                      style: TextStyle(color: AppTheme.success, fontSize: 13),
+                    ),
                   ],
                 ),
               ),
@@ -151,12 +161,12 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
 
             // Score circle
             Container(
-              width: 150, height: 150,
+              width: 150,
+              height: 150,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: _scoreColor.withOpacity(0.1),
-                border: Border.all(
-                    color: _scoreColor, width: 4),
+                border: Border.all(color: _scoreColor, width: 4),
               ),
               child: Column(
                 mainAxisAlignment: MainAxisAlignment.center,
@@ -164,60 +174,97 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
                   Text(
                     '${_score.toInt()}%',
                     style: TextStyle(
-                        fontSize: 36,
-                        fontWeight: FontWeight.bold,
-                        color: _scoreColor),
+                      fontSize: 36,
+                      fontWeight: FontWeight.bold,
+                      color: _scoreColor,
+                    ),
                   ),
                   Text(
                     _grade,
                     style: TextStyle(
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold,
-                        color: _scoreColor),
+                      fontSize: 18,
+                      fontWeight: FontWeight.bold,
+                      color: _scoreColor,
+                    ),
                   ),
                 ],
               ),
             ),
             const SizedBox(height: 16),
 
-            Text(widget.task['title'],
-                style: const TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                    color: AppTheme.textPrimary)),
+            Text(
+              widget.task['title'],
+              style: const TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: AppTheme.textPrimary,
+              ),
+            ),
             const SizedBox(height: 4),
-            Text(_feedback,
-                style: TextStyle(
-                    fontSize: 15, color: _scoreColor,
-                    fontWeight: FontWeight.w500)),
+            Text(
+              _feedback,
+              style: TextStyle(
+                fontSize: 15,
+                color: _scoreColor,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
             const SizedBox(height: 24),
 
+            // Overall task completion
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text('Task completion'),
+                    Text('${_score.toInt()}%'),
+                  ],
+                ),
+                const SizedBox(height: 8),
+                ClipRRect(
+                  borderRadius: BorderRadius.circular(8),
+                  child: LinearProgressIndicator(
+                    value: _score / 100,
+                    minHeight: 8,
+                    backgroundColor: color.withOpacity(0.12),
+                    valueColor: AlwaysStoppedAnimation<Color>(color),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 20),
+
             // Stats row
-            Row(children: [
-              _StatCard(
+            Row(
+              children: [
+                _StatCard(
                   label: 'Steps Done',
                   value: '${widget.completedSteps}/${widget.totalSteps}',
                   icon: Icons.check_circle_outline,
-                  color: color),
-              const SizedBox(width: 12),
-              _StatCard(
+                  color: color,
+                ),
+                const SizedBox(width: 12),
+                _StatCard(
                   label: 'Time Taken',
                   value: _formatTime(widget.timeTakenSeconds),
                   icon: Icons.timer_outlined,
-                  color: color),
-              const SizedBox(width: 12),
-              _StatCard(
+                  color: color,
+                ),
+                const SizedBox(width: 12),
+                _StatCard(
                   label: 'Grade',
                   value: _grade,
                   icon: Icons.star_outline,
-                  color: _scoreColor),
-            ]),
+                  color: _scoreColor,
+                ),
+              ],
+            ),
             const SizedBox(height: 20),
 
             // Safety warnings reminder
-            if ((AppConstants.safetyWarnings[
-                        widget.task['component']] ??
-                    [])
+            if ((AppConstants.safetyWarnings[widget.task['component']] ?? [])
                 .isNotEmpty) ...[
               Container(
                 width: double.infinity,
@@ -225,34 +272,44 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
                 decoration: BoxDecoration(
                   color: AppTheme.danger.withOpacity(0.06),
                   borderRadius: BorderRadius.circular(10),
-                  border: Border.all(
-                      color: AppTheme.danger.withOpacity(0.2)),
+                  border: Border.all(color: AppTheme.danger.withOpacity(0.2)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Row(children: [
-                      Icon(Icons.warning_amber_rounded,
-                          color: AppTheme.danger, size: 16),
-                      SizedBox(width: 6),
-                      Text('Safety Reminders',
+                    const Row(
+                      children: [
+                        Icon(
+                          Icons.warning_amber_rounded,
+                          color: AppTheme.danger,
+                          size: 16,
+                        ),
+                        SizedBox(width: 6),
+                        Text(
+                          'Safety Reminders',
                           style: TextStyle(
-                              color: AppTheme.danger,
-                              fontWeight: FontWeight.bold,
-                              fontSize: 13)),
-                    ]),
+                            color: AppTheme.danger,
+                            fontWeight: FontWeight.bold,
+                            fontSize: 13,
+                          ),
+                        ),
+                      ],
+                    ),
                     const SizedBox(height: 8),
-                    ...(AppConstants.safetyWarnings[
-                                widget.task['component']] ??
+                    ...(AppConstants.safetyWarnings[widget.task['component']] ??
                             [])
-                        .map((w) => Padding(
-                              padding:
-                                  const EdgeInsets.only(bottom: 3),
-                              child: Text('• $w',
-                                  style: const TextStyle(
-                                      fontSize: 12,
-                                      color: AppTheme.danger)),
-                            )),
+                        .map(
+                          (w) => Padding(
+                            padding: const EdgeInsets.only(bottom: 3),
+                            child: Text(
+                              '• $w',
+                              style: const TextStyle(
+                                fontSize: 12,
+                                color: AppTheme.danger,
+                              ),
+                            ),
+                          ),
+                        ),
                   ],
                 ),
               ),
@@ -270,24 +327,33 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(children: [
-                    Icon(Icons.lightbulb_outline,
-                        color: color, size: 16),
-                    const SizedBox(width: 6),
-                    Text('Improvement Tips',
+                  Row(
+                    children: [
+                      Icon(Icons.lightbulb_outline, color: color, size: 16),
+                      const SizedBox(width: 6),
+                      Text(
+                        'Improvement Tips',
                         style: TextStyle(
-                            color: color,
-                            fontWeight: FontWeight.bold,
-                            fontSize: 13)),
-                  ]),
+                          color: color,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 13,
+                        ),
+                      ),
+                    ],
+                  ),
                   const SizedBox(height: 8),
-                  ..._getTips().map((tip) => Padding(
-                        padding: const EdgeInsets.only(bottom: 3),
-                        child: Text('• $tip',
-                            style: const TextStyle(
-                                fontSize: 12,
-                                color: AppTheme.textSecondary)),
-                      )),
+                  ..._getTips().map(
+                    (tip) => Padding(
+                      padding: const EdgeInsets.only(bottom: 3),
+                      child: Text(
+                        '• $tip',
+                        style: const TextStyle(
+                          fontSize: 12,
+                          color: AppTheme.textSecondary,
+                        ),
+                      ),
+                    ),
+                  ),
                 ],
               ),
             ),
@@ -303,14 +369,13 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
                   side: BorderSide(color: color),
                   foregroundColor: color,
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 14),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
                 onPressed: () => Navigator.push(
                   context,
-                  MaterialPageRoute(
-                      builder: (_) => const HistoryScreen()),
+                  MaterialPageRoute(builder: (_) => const HistoryScreen()),
                 ),
               ),
             ),
@@ -325,12 +390,12 @@ class _EvaluationScreenState extends State<EvaluationScreen> {
                 style: ElevatedButton.styleFrom(
                   backgroundColor: color,
                   shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(10)),
-                  padding:
-                      const EdgeInsets.symmetric(vertical: 14),
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
                 ),
-                onPressed: () => Navigator.popUntil(
-                    context, (route) => route.isFirst),
+                onPressed: () =>
+                    Navigator.popUntil(context, (route) => route.isFirst),
               ),
             ),
           ],
@@ -385,22 +450,30 @@ class _StatCard extends StatelessWidget {
           color: color.withOpacity(0.08),
           borderRadius: BorderRadius.circular(12),
         ),
-        child: Column(children: [
-          Icon(icon, color: color, size: 22),
-          const SizedBox(height: 6),
-          Text(value,
+        child: Column(
+          children: [
+            Icon(icon, color: color, size: 22),
+            const SizedBox(height: 6),
+            Text(
+              value,
               style: TextStyle(
-                  fontSize: 15,
-                  fontWeight: FontWeight.bold,
-                  color: color),
-              textAlign: TextAlign.center),
-          const SizedBox(height: 2),
-          Text(label,
+                fontSize: 15,
+                fontWeight: FontWeight.bold,
+                color: color,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 2),
+            Text(
+              label,
               style: const TextStyle(
-                  fontSize: 10,
-                  color: AppTheme.textSecondary),
-              textAlign: TextAlign.center),
-        ]),
+                fontSize: 10,
+                color: AppTheme.textSecondary,
+              ),
+              textAlign: TextAlign.center,
+            ),
+          ],
+        ),
       ),
     );
   }

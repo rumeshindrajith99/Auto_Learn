@@ -19,15 +19,13 @@ class FirebaseService {
   }) async {
     if (_uid == null) return;
 
-    final score = ((completedSteps / totalSteps) * 100).toInt();
+    final score = totalSteps <= 0
+        ? 0
+        : ((completedSteps.clamp(0, totalSteps) / totalSteps) * 100).toInt();
 
     try {
       // Save individual result
-      await _db
-          .collection('users')
-          .doc(_uid)
-          .collection('results')
-          .add({
+      await _db.collection('users').doc(_uid).collection('results').add({
         'taskId': taskId,
         'taskTitle': taskTitle,
         'component': component,
@@ -64,9 +62,7 @@ class FirebaseService {
           .orderBy('completedAt', descending: true)
           .get();
 
-      return snapshot.docs
-          .map((doc) => {...doc.data(), 'id': doc.id})
-          .toList();
+      return snapshot.docs.map((doc) => {...doc.data(), 'id': doc.id}).toList();
     } catch (e) {
       print('Error getting results: $e');
       return [];
@@ -94,8 +90,7 @@ class FirebaseService {
       final doc = await _db.collection('users').doc(_uid).get();
       final data = doc.data();
       if (data == null) return false;
-      final completedTasks = List<String>.from(
-          data['completedTasks'] ?? []);
+      final completedTasks = List<String>.from(data['completedTasks'] ?? []);
       return completedTasks.contains(taskId);
     } catch (e) {
       return false;
