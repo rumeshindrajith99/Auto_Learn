@@ -1,3 +1,5 @@
+// ignore_for_file: avoid_print
+
 // ================================================================
 // MODULE 4: Practical Evaluation & Safety Feedback
 // Research Project: Automobile Learning System
@@ -9,7 +11,6 @@
 // ================================================================
 
 class EvaluationEngine {
-
   // ---- SAFETY RULE ENGINE ----
   // Checks safety rules for each component
   static List<SafetyAlert> checkSafetyRules(
@@ -21,14 +22,15 @@ class EvaluationEngine {
     final rules = _safetyRules[component] ?? [];
 
     for (final rule in rules) {
-      final violated = rule.checkViolation(
-        stepsCompleted, stepCorrectness);
+      final violated = rule.checkViolation(stepsCompleted, stepCorrectness);
       if (violated) {
-        alerts.add(SafetyAlert(
-          rule: rule.rule,
-          severity: rule.severity,
-          component: component,
-        ));
+        alerts.add(
+          SafetyAlert(
+            rule: rule.rule,
+            severity: rule.severity,
+            component: component,
+          ),
+        );
       }
     }
 
@@ -38,13 +40,15 @@ class EvaluationEngine {
   static final Map<String, List<SafetyRule>> _safetyRules = {
     'battery': [
       SafetyRule(
-        rule: 'High voltage risk — always remove metal '
+        rule:
+            'High voltage risk — always remove metal '
             'jewelry before working on battery',
         severity: SafetySeverity.critical,
         checkViolation: (steps, correct) => false,
       ),
       SafetyRule(
-        rule: 'NEGATIVE terminal must be disconnected FIRST '
+        rule:
+            'NEGATIVE terminal must be disconnected FIRST '
             'to prevent short circuit',
         severity: SafetySeverity.critical,
         checkViolation: (steps, correct) {
@@ -58,7 +62,8 @@ class EvaluationEngine {
         },
       ),
       SafetyRule(
-        rule: 'Battery acid is corrosive — wear gloves '
+        rule:
+            'Battery acid is corrosive — wear gloves '
             'and eye protection',
         severity: SafetySeverity.high,
         checkViolation: (steps, correct) => false,
@@ -66,13 +71,15 @@ class EvaluationEngine {
     ],
     'spark_plug': [
       SafetyRule(
-        rule: 'Engine must be completely COLD — '
+        rule:
+            'Engine must be completely COLD — '
             'hot plugs cause severe burns',
         severity: SafetySeverity.critical,
         checkViolation: (steps, correct) => false,
       ),
       SafetyRule(
-        rule: 'Do not overtighten spark plug — '
+        rule:
+            'Do not overtighten spark plug — '
             'can crack the cylinder head',
         severity: SafetySeverity.high,
         checkViolation: (steps, correct) => false,
@@ -80,13 +87,15 @@ class EvaluationEngine {
     ],
     'coolant': [
       SafetyRule(
-        rule: 'NEVER open radiator/reservoir cap on HOT engine '
+        rule:
+            'NEVER open radiator/reservoir cap on HOT engine '
             '— explosion risk from pressurized steam',
         severity: SafetySeverity.critical,
         checkViolation: (steps, correct) => false,
       ),
       SafetyRule(
-        rule: 'Coolant is TOXIC — keep away from '
+        rule:
+            'Coolant is TOXIC — keep away from '
             'children and animals',
         severity: SafetySeverity.high,
         checkViolation: (steps, correct) => false,
@@ -94,7 +103,8 @@ class EvaluationEngine {
     ],
     'engine_oil': [
       SafetyRule(
-        rule: 'Hot oil causes serious burns — '
+        rule:
+            'Hot oil causes serious burns — '
             'wait for engine to cool completely',
         severity: SafetySeverity.high,
         checkViolation: (steps, correct) => false,
@@ -102,7 +112,8 @@ class EvaluationEngine {
     ],
     'air_filter': [
       SafetyRule(
-        rule: 'Do not run engine without air filter fitted — '
+        rule:
+            'Do not run engine without air filter fitted — '
             'causes engine damage',
         severity: SafetySeverity.medium,
         checkViolation: (steps, correct) => false,
@@ -133,7 +144,10 @@ class EvaluationEngine {
 
     // Safety violations penalty
     final safetyAlerts = checkSafetyRules(
-      component, completedActionNames, stepCorrectness);
+      component,
+      completedActionNames,
+      stepCorrectness,
+    );
     final criticalViolations = safetyAlerts
         .where((a) => a.severity == SafetySeverity.critical)
         .length;
@@ -141,10 +155,13 @@ class EvaluationEngine {
 
     // Grade calculation
     final grade = _calculateGrade(score);
-    final feedback = _generateFeedback(score, completedSteps,
-        totalSteps, safetyAlerts);
-    final tips = _generateTips(score, component,
-        completedSteps, totalSteps);
+    final feedback = _generateFeedback(
+      score,
+      completedSteps,
+      totalSteps,
+      safetyAlerts,
+    );
+    final tips = _generateTips(score, component, completedSteps, totalSteps);
 
     return EvaluationReport(
       component: component,
@@ -161,11 +178,11 @@ class EvaluationEngine {
   }
 
   static final Map<String, int> _expectedTimes = {
-    'air_filter':  600,  // 10 minutes
-    'spark_plug':  900,  // 15 minutes
-    'battery':     1200, // 20 minutes
-    'engine_oil':  300,  // 5 minutes
-    'coolant':     300,  // 5 minutes
+    'air_filter': 600, // 10 minutes
+    'spark_plug': 900, // 15 minutes
+    'battery': 1200, // 20 minutes
+    'engine_oil': 300, // 5 minutes
+    'coolant': 300, // 5 minutes
   };
 
   static String _calculateGrade(double score) {
@@ -226,6 +243,42 @@ class EvaluationEngine {
 
     return tips;
   }
+}
+
+// Example usage for Module 4
+void main() {
+  final report = EvaluationEngine.generateReport(
+    component: 'battery',
+    taskId: 'BT-103',
+    totalSteps: 6,
+    completedSteps: 5,
+    timeTakenSeconds: 980,
+    completedActionNames: [
+      'BA_04_loosen_positive',
+      'BA_02_loosen_negative',
+      'BA_03_remove_cable',
+      'BA_05_clean_terminal',
+      'BA_06_inspect_battery',
+    ],
+    stepCorrectness: {
+      'BA_04_loosen_positive': false,
+      'BA_02_loosen_negative': true,
+      'BA_03_remove_cable': true,
+      'BA_05_clean_terminal': true,
+      'BA_06_inspect_battery': true,
+    },
+  );
+
+  print('Component: ${report.component}');
+  print('Task ID: ${report.taskId}');
+  print('Score: ${report.score} / 100');
+  print('Grade: ${report.grade}');
+  print('Safety alerts: ${report.safetyAlerts.length}');
+  for (final alert in report.safetyAlerts) {
+    print('- ${alert.severity.name.toUpperCase()}: ${alert.rule}');
+  }
+  print('Feedback: ${report.feedback}');
+  print('Improvement tips: ${report.improvementTips.join(' | ')}');
 }
 
 // Data models for Module 4
