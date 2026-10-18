@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "896899518137",
+    "project_id": "autolearnar",
+    "storage_bucket": "autolearnar.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:896899518137:android:9b45c01f9d85645f691568",
+        "android_client_info": {
+          "package_name": "com.example.auto_learn_ar"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBF65Oxp-fsrJobPrTNwXshoaAzxcsciLo"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

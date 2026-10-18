@@ -1,26 +1,17 @@
-# AutoLearn AR - 2 Day Research MVP
+# auto_learn_ar
 
-This is a Kotlin + Jetpack Compose Android prototype based on the uploaded research requirements.
+A new Flutter project.
 
-Included:
-- Home screen
-- Camera permission flow
-- Demo component identification layer
-- Engine component data
-- Rule-based task recognition
-- Task instructions
-- AR-style guidance prototype
-- Task verification
-- Performance score
-- Mistake detection
-- Safety warnings
-- Final evaluation report
+## Getting Started
 
-Important:
-The current ComponentDetector is a DEMO implementation and returns "battery".
-It is intentionally structured as an interface so a TensorFlow Lite/CNN detector can be plugged in later.
+This project is a starting point for a Flutter application.
 
-Open the project in Android Studio and let Gradle sync.
-Then run on an Android device/emulator.
+A few resources to get you started if this is your first Flutter project:
 
-If Android Studio asks to upgrade Gradle/plugin versions, prefer keeping the supplied versions first.
+- [Learn Flutter](https://docs.flutter.dev/get-started/learn-flutter)
+- [Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
+- [Flutter learning resources](https://docs.flutter.dev/reference/learning-resources)
+
+For help getting started with Flutter development, view the
+[online documentation](https://docs.flutter.dev/), which offers tutorials,
+samples, guidance on mobile development, and a full API reference.

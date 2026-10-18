@@ -1,4 +1,0 @@
-air_filter_closed
-cover_open
-inspection
-reinstall
