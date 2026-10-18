@@ -7,8 +7,6 @@ An Android app that teaches automotive maintenance through the phone camera. It 
  
 > Package: `com.autolearn.ar` · App label: **EngiScan** · Kotlin + Jetpack Compose
  
-
- 
 ---
  
 ## Table of contents
@@ -75,21 +73,27 @@ In workshop training, one instructor supervises many students, so mistakes (wron
 ## Modules in detail
  
 ### 1. Component identification
-- On-device image classifier (`MLClassifier`) with MobileNetV2-style TFLite model.
+ 
+- On-device image classifier (`MLClassifier`) with a MobileNetV2-style TFLite model.
 - Classes: `air_filter`, `battery_terminal`, `engine_oil_dipstick`, `spark_plug`.
 - Uses a confidence threshold so uncertain frames are ignored.
 ### 2. Task recognition and task data
+ 
 - `TaskRecognizer` finds the task for the identified component by rule-based lookup.
 - Static Kotlin data files hold tasks, theory content, practical job data, component data and safety notes (`TaskData`, `TheoryContent`, `PracticalJobData`, `ComponentData`, `SafetyData`).
 ### 3. AR-style guidance
+ 
 - `Spatial3DEngine` and `PartGuidanceEngine` implement their own pitch/yaw rotation and perspective projection and draw cuboids and animated motion arcs (for example "lift", "unclip", "rotate") on a Compose `Canvas`.
 - This is lightweight guidance, not world-tracked AR: it does not use ARCore or follow the physical part.
 ### 4. Action recognition and verification
+ 
 - Per-frame image classification of the **stage** of the task (four ordered stages per task), 224 x 224 input, about one prediction every 400 ms.
 - Quantised TFLite model (335.7 KB), exported with `action_labels.json`, `step_mapping.json` and `component_mapping.json`.
 - `VerificationScreen` maps each predicted label to a step and requires **3 continuous seconds** of the expected stage before verifying it.
 ### 5. Evaluation and scoring
-- `EvaluationEngine` and the score calculator combine four components:
+ 
+`EvaluationEngine` and the score calculator combine four components:
+ 
 | Component | Weight |
 |-----------|--------|
 | Task completion | 40% |
@@ -97,8 +101,10 @@ In workshop training, one instructor supervises many students, so mistakes (wron
 | Average model confidence (stability) | 20% |
 | Precision (penalty for resets) | 15% |
  
-- `ScoreHistoryManager` keeps previous results on the device.
+`ScoreHistoryManager` keeps previous results on the device.
+ 
 ### 6. AI tutor chatbot
+ 
 - `ChatbotService` calls the Gemini API (via OkHttp) with a system prompt that includes the current task's theory and safety-first instructions.
 - It sends text only, never camera frames.
 ## Supported tasks
@@ -107,8 +113,6 @@ In workshop training, one instructor supervises many students, so mistakes (wron
 |---|------|-------------------|
 | 01 | Air filter inspection | air filter closed, air filter opening, inspection, reinstall |
 | 02 | Battery terminal | battery connected, negative unclamped, positive unclamped, removed |
-| 03 | Engine oil dipstick inspection | dipstick inserted, dipstick pulled, wiped clean, level inspected |
-| 04 | Spark plug replacement | ignition boot on, boot removed, plug loosened, new plug seated |
  
 ## Tech stack
  
@@ -125,7 +129,7 @@ In workshop training, one instructor supervises many students, so mistakes (wron
 ## Project structure
  
 ```
-AutoLearnAR_Project/
+R26-IT-049/
   app/
     build.gradle.kts
     src/main/
@@ -145,19 +149,18 @@ AutoLearnAR_Project/
 ## Getting started
  
 ### Prerequisites
+ 
 - Android Studio (recent stable version)
 - An Android device (recommended) or an emulator with a camera
 - A Gemini API key (only needed for the chatbot)
 ### Run
-1. Clone the repository
+ 
+1. Clone the repository:
 ```bash
-   git clone <your-repo-url>
-   cd AutoLearnAR_Project
+   git clone https://github.com/sahanchanuka24/R26-IT-049.git
+   cd R26-IT-049
 ```
-2. Add your key to `local.properties` (git-ignored). Use the property name that `app/build.gradle.kts` reads:
-```properties
-   GEMINI_API_KEY=your_key_here
-```
+ 
 3. Open the project in Android Studio and let Gradle sync. Keep the supplied Gradle and plugin versions unless you have a reason to upgrade.
 4. Run on a device and grant the camera permission.
 > Never commit API keys. Keep them in `local.properties` or a secrets manager.
@@ -170,19 +173,27 @@ AutoLearnAR_Project/
 | Action model (`.tflite` + `action_labels.json`) | Recognise the task stage | 16 classes, 335.7 KB, 95.24% accuracy reported in the notebook |
  
 **Action recognition dataset:** 4 tasks x 4 stages = 16 classes, **150 images per class, 2,400 images**, labelled by folder.
-**Component dataset:** `[add size, classes and capture details]`
  
-The action model was trained in Google Colab (notebook: `AutoLearn AR - Action Recognition test.ipynb`): load the dataset, augment the training split, fine-tune a MobileNet-family network for about 45 epochs, export a quantised TFLite model plus the label and mapping JSON files. To change a model, copy the new `.tflite` and JSON files into `app/src/main/assets/` and keep the label order identical to the model output order.
+The action model was trained in Google Colab (notebook: `AutoLearn AR - Action Recognition test.ipynb`): load the dataset, augment the training split, fine-tune a MobileNet-family network for about 45 epochs, and export a quantised TFLite model plus the label and mapping JSON files. To change a model, copy the new `.tflite` and JSON files into `app/src/main/assets/` and keep the label order identical to the model output order.
  
 ## App screens
  
-Home, Camera, Task, Verification, Evaluation, History, Chatbot and Account. `[Add a screenshot or a short description for each]`
+| Screen | Purpose |
+|--------|---------|
+| Home | Entry point and navigation |
+| Camera | Live preview and component identification |
+| Task | Instructions, theory and safety information |
+| Verification | Live step verification with hold progress |
+| Evaluation | Final score and report |
+| History | Previous attempts and scores |
+| Chatbot | AI tutor Q&A |
+| Account | User and app settings |
  
 ## Privacy and security
  
 - Vision inference runs entirely on the device; camera frames are not stored or uploaded.
 - The chatbot sends text questions only.
-- API keys are read from `local.properties` at build time and kept out of source control. Note that a key compiled into an APK can be extracted, so use a restricted key or a small backend proxy for any public release.
+- API keys are read from `local.properties` at build time and kept out of source control. A key compiled into an APK can be extracted, so use a restricted key or a small backend proxy for any public release.
 ## Known limitations
  
 - **Action recognition sees appearance, not motion.** A finished state shown to the camera can be credited as a completed step.
@@ -197,7 +208,6 @@ Home, Camera, Task, Verification, Evaluation, History, Chatbot and Account. `[Ad
  
 - [ ] Bundle action models for all four tasks (or one shared 16-class model with a task selector)
 - [ ] Majority-vote or tolerance window in place of the strict 3 s hold
-- [ ] Hand-landmark check (for example MediaPipe) to verify motion, not just appearance
 - [ ] ARCore or marker-free tracking so overlays stay on the part
 - [ ] Session-based train/validation/test split and an independent test set
 - [ ] GPU or NNAPI delegate and faster frame conversion
@@ -208,19 +218,11 @@ Home, Camera, Task, Verification, Evaluation, History, Chatbot and Account. `[Ad
  
 Group **RP26-IT-049**, B.Sc. (Hons) in Information Technology, SLIIT.
  
-| Component | Owner |
-|-----------|-------|
-| Component identification | `[name]` |
-| Task recognition and instructions | `[name]` |
-| AR guidance | `[name]` |
-| Action recognition and task verification | Jayalath S.P.S.C.K. (IT22231864) |
-| Safety feedback and evaluation | `[name]` |
- 
-Supervisor: `[name]`
- 
-Built with TensorFlow Lite, CameraX, Jetpack Compose and the Gemini API.
+- Action recognition and task verification: **Jayalath S.P.S.C.K.** (IT22231864)
+- Supervisor: **Ms. Anjalee Gamage**
+Built with TensorFlow Lite, CameraX, Jetpack Compose
  
 ## License
  
-`[Choose a license, for example MIT, and add a LICENSE file. Academic projects often stay private or all-rights-reserved until assessment is complete.]`
+This project was developed for academic purposes at SLIIT. All rights reserved by the authors unless a license file states otherwise.
  
