@@ -3,65 +3,108 @@
 **AR-Based Intelligent Automobile Repair Learning and Evaluation System**
 Research project **RP26-IT-049** · Sri Lanka Institute of Information Technology (SLIIT)
  
-An Android app that helps automotive students learn engine-bay maintenance. Point the phone at a component, follow AR-style guidance step by step, and let the app **recognise which stage of the task you are at, verify each step, and score your performance**, all on-device.
+An Android app that teaches automotive maintenance through the phone camera. It **identifies an engine component, guides the student step by step with AR-style overlays, recognises which stage of the task the student has reached, verifies each step, warns about safety, scores the attempt, and answers questions through an AI tutor**. The vision models run on the device, so the core learning flow works without internet.
  
 > Package: `com.autolearn.ar` · App label: **EngiScan** · Kotlin + Jetpack Compose
+ 
+
  
 ---
  
 ## Table of contents
  
+- [Why this project](#why-this-project)
 - [Features](#features)
-- [How it works](#how-it-works)
-- [Action Recognition module](#action-recognition-module)
+- [System overview](#system-overview)
+- [Modules in detail](#modules-in-detail)
+- [Supported tasks](#supported-tasks)
 - [Tech stack](#tech-stack)
 - [Project structure](#project-structure)
 - [Getting started](#getting-started)
-- [Dataset](#dataset)
-- [Model training](#model-training)
+- [Models and datasets](#models-and-datasets)
+- [App screens](#app-screens)
+- [Privacy and security](#privacy-and-security)
 - [Known limitations](#known-limitations)
 - [Roadmap](#roadmap)
 - [Team and credits](#team-and-credits)
 - [License](#license)
 ---
  
+## Why this project
+ 
+In workshop training, one instructor supervises many students, so mistakes (wrong order, skipped steps, unsafe handling) are often noticed late. Paper manuals and videos do not observe the learner, and most AR maintenance apps only show instructions without checking the result. AutoLearn AR closes the loop: it **sees** what the learner is doing, **confirms** each step, and **gives feedback and a score**, using only a smartphone.
+ 
 ## Features
  
-- **Component identification**: on-device TensorFlow Lite classifier recognises the engine component in view.
-- **Task instructions**: ordered steps, theory content and safety warnings for each task.
-- **AR-style guidance**: custom 3D-to-2D projection engine draws guidance overlays on the camera preview (no ARCore dependency).
-- **Action recognition and verification**: a second on-device model recognises the current stage of the task; a step is verified when the expected stage is held for 3 seconds.
-- **Performance score**: weighted score from completion, time, model confidence and precision (resets), with a final evaluation report and score history.
-- **AI tutor chatbot**: Gemini-powered Q&A grounded in the current task's theory content.
-- **Offline-first**: both vision models run on the device; camera frames are never uploaded.
-## How it works
+| Area | What the app does |
+|------|-------------------|
+| Component identification | Recognises the engine component in view with an on-device TensorFlow Lite classifier |
+| Task recognition | Maps the identified component to its maintenance task using rule-based logic |
+| Instructions and theory | Ordered steps, theory content and practical job information for each task |
+| AR-style guidance | Custom 3D-to-2D projection engine draws guidance and motion cues over the camera preview |
+| Action recognition | A second on-device model recognises the current stage of the task |
+| Task verification | A step is verified when the expected stage is held for 3 seconds; the task advances automatically |
+| Safety warnings | Step-specific safety notes shown during the task |
+| Performance score | Weighted score from completion, time, model confidence and precision, plus a final evaluation report |
+| Score history | Stores previous attempts locally |
+| AI tutor chatbot | Gemini-powered Q&A grounded in the current task's theory content |
+ 
+## System overview
  
 ```
-Camera (CameraX)
-   |
-   +--> Component model (MobileNetV2, TFLite) --> selects the task
-   |
-   +--> Action model (TFLite, 224x224) every ~400 ms --> Prediction(label, confidence)
-                                                              |
-                          Verification screen: map label -> step, hold 3 s --> step verified
-                                                              |
-                                              Evaluation engine --> score + report
+                    +----------------------------+
+ Camera (CameraX) ->| Component identification   |-> task selected
+                    | (MobileNetV2, TFLite)      |
+                    +----------------------------+
+                                 |
+                    +----------------------------+
+                    | Task recognition + data    |-> steps, theory, safety
+                    +----------------------------+
+                                 |
+        +------------------------+------------------------+
+        |                        |                        |
+ AR-style guidance      Action recognition          AI tutor chatbot
+ (Spatial3DEngine,      (TFLite, ~400 ms)           (Gemini, text only)
+  PartGuidanceEngine)           |
+                       Verification screen
+                       (map label -> step, hold 3 s)
+                                |
+                       Evaluation engine -> score, report, history
 ```
  
-## Action Recognition module
+## Modules in detail
  
-This module answers: *"Which stage of the maintenance procedure is the student at right now?"*
+### 1. Component identification
+- On-device image classifier (`MLClassifier`) with MobileNetV2-style TFLite model.
+- Classes: `air_filter`, `battery_terminal`, `engine_oil_dipstick`, `spark_plug`.
+- Uses a confidence threshold so uncertain frames are ignored.
+### 2. Task recognition and task data
+- `TaskRecognizer` finds the task for the identified component by rule-based lookup.
+- Static Kotlin data files hold tasks, theory content, practical job data, component data and safety notes (`TaskData`, `TheoryContent`, `PracticalJobData`, `ComponentData`, `SafetyData`).
+### 3. AR-style guidance
+- `Spatial3DEngine` and `PartGuidanceEngine` implement their own pitch/yaw rotation and perspective projection and draw cuboids and animated motion arcs (for example "lift", "unclip", "rotate") on a Compose `Canvas`.
+- This is lightweight guidance, not world-tracked AR: it does not use ARCore or follow the physical part.
+### 4. Action recognition and verification
+- Per-frame image classification of the **stage** of the task (four ordered stages per task), 224 x 224 input, about one prediction every 400 ms.
+- Quantised TFLite model (335.7 KB), exported with `action_labels.json`, `step_mapping.json` and `component_mapping.json`.
+- `VerificationScreen` maps each predicted label to a step and requires **3 continuous seconds** of the expected stage before verifying it.
+### 5. Evaluation and scoring
+- `EvaluationEngine` and the score calculator combine four components:
+| Component | Weight |
+|-----------|--------|
+| Task completion | 40% |
+| Time taken (baseline 30 s) | 25% |
+| Average model confidence (stability) | 20% |
+| Precision (penalty for resets) | 15% |
  
-- **Formulation:** per-frame image classification. Each task has four ordered stages, and each stage is a class.
-- **Input:** 224 x 224 RGB frames from CameraX `ImageAnalysis`, throttled to one prediction about every 400 ms.
-- **Model:** MobileNet-family network fine-tuned in Google Colab and exported as a quantised TensorFlow Lite file (**335.7 KB**).
-- **Reported accuracy:** **95.24%** in the training notebook (see [limitations](#known-limitations) for how to read this figure).
-- **Verification rule:** the predicted stage must match the expected step and stay matched for **3 continuous seconds**; a break resets the timer.
-- **Exported artefacts:** `action_model.tflite`, `action_labels.json`, `step_mapping.json`, `component_mapping.json`.
-### Tasks and stages
+- `ScoreHistoryManager` keeps previous results on the device.
+### 6. AI tutor chatbot
+- `ChatbotService` calls the Gemini API (via OkHttp) with a system prompt that includes the current task's theory and safety-first instructions.
+- It sends text only, never camera frames.
+## Supported tasks
  
-| # | Task | Stage classes (in order) |
-|---|------|--------------------------|
+| # | Task | Stages (in order) |
+|---|------|-------------------|
 | 01 | Air filter inspection | air filter closed, air filter opening, inspection, reinstall |
 | 02 | Battery terminal | battery connected, negative unclamped, positive unclamped, removed |
 | 03 | Engine oil dipstick inspection | dipstick inserted, dipstick pulled, wiped clean, level inspected |
@@ -71,50 +114,47 @@ This module answers: *"Which stage of the maintenance procedure is the student a
  
 | Area | Technology |
 |------|------------|
-| Language / UI | Kotlin, Jetpack Compose, Material 3 |
+| Language and UI | Kotlin, Jetpack Compose, Material 3 |
 | Navigation | Navigation-Compose |
 | Camera | CameraX (core, camera2, lifecycle, view) |
 | On-device ML | TensorFlow Lite (CPU interpreter) |
+| Cloud AI | Gemini API via OkHttp, JSON via `org.json` |
 | Model training | Python, TensorFlow/Keras, Google Colab |
-| Cloud assistant | Gemini API via OkHttp (text only) |
 | Build | Gradle Kotlin DSL, Android Studio |
  
 ## Project structure
  
 ```
-app/src/main/
-  java/com/autolearn/ar/
-    ai/           TFLite classifiers, task recognition, evaluation, AR guidance, chatbot
-    ui/           Compose screens (Camera, Verification, Evaluation, History, Chatbot ...)
-    navigation/   AppNavigation.kt
-    data/ model/  task, component, theory and safety data
-  assets/         .tflite models and label files
+AutoLearnAR_Project/
+  app/
+    build.gradle.kts
+    src/main/
+      AndroidManifest.xml
+      assets/                  .tflite models and label files
+      java/com/autolearn/ar/
+        ai/                    MLClassifier, TaskRecognizer, EvaluationEngine,
+                               Spatial3DEngine, PartGuidanceEngine, ChatbotService ...
+        ui/                    Compose screens, CameraPreview, TFLiteClassifier ...
+        navigation/            AppNavigation.kt
+        data/ model/           task, component, theory, safety and score data
+  build.gradle.kts
+  settings.gradle.kts
+  README.md
 ```
- 
-Key files for the action recognition module:
- 
-| File | Role |
-|------|------|
-| `TFLiteClassifier.kt` | Loads the model and labels, classifies one frame |
-| `CameraPreview.kt` | CameraX analysis, throttling, bitmap conversion |
-| `VerificationScreen.kt` | Step mapping, hold timer, progress UI, scoring inputs |
-| `EvaluationEngine.kt` | Final score and report |
  
 ## Getting started
  
 ### Prerequisites
- 
 - Android Studio (recent stable version)
-- An Android device (recommended) or emulator with camera support
+- An Android device (recommended) or an emulator with a camera
 - A Gemini API key (only needed for the chatbot)
 ### Run
- 
 1. Clone the repository
 ```bash
    git clone <your-repo-url>
    cd AutoLearnAR_Project
 ```
-2. Add your API key to `local.properties` (this file is git-ignored). Use the property name that `app/build.gradle.kts` reads:
+2. Add your key to `local.properties` (git-ignored). Use the property name that `app/build.gradle.kts` reads:
 ```properties
    GEMINI_API_KEY=your_key_here
 ```
@@ -122,51 +162,65 @@ Key files for the action recognition module:
 4. Run on a device and grant the camera permission.
 > Never commit API keys. Keep them in `local.properties` or a secrets manager.
  
-## Dataset
+## Models and datasets
  
-- 4 tasks x 4 stages = **16 classes**
-- **150 images per class**, **2,400 images** in total (perfectly balanced)
-- Labelled by folder (`task/stage/image.jpg`), no bounding boxes needed
-- Capture details, split and augmentation: see the thesis or add them here: `[phone, vehicle, lighting, split]`
-## Model training
+| Model | Purpose | Notes |
+|-------|---------|-------|
+| Component model (`component_model.tflite`) | Identify the component | Labels in `labels.txt` |
+| Action model (`.tflite` + `action_labels.json`) | Recognise the task stage | 16 classes, 335.7 KB, 95.24% accuracy reported in the notebook |
  
-The training notebook (`AutoLearn AR - Action Recognition test.ipynb`) does the following:
+**Action recognition dataset:** 4 tasks x 4 stages = 16 classes, **150 images per class, 2,400 images**, labelled by folder.
+**Component dataset:** `[add size, classes and capture details]`
  
-1. Loads the 16-class dataset and applies augmentation to the training split.
-2. Fine-tunes a MobileNet-family network for about 45 epochs.
-3. Plots training and validation accuracy and loss.
-4. Converts the model to quantised TensorFlow Lite and writes the four artefacts listed above.
-To use a new model, copy the `.tflite` and JSON files into `app/src/main/assets/` and make sure the label order matches the model output order.
+The action model was trained in Google Colab (notebook: `AutoLearn AR - Action Recognition test.ipynb`): load the dataset, augment the training split, fine-tune a MobileNet-family network for about 45 epochs, export a quantised TFLite model plus the label and mapping JSON files. To change a model, copy the new `.tflite` and JSON files into `app/src/main/assets/` and keep the label order identical to the model output order.
  
+## App screens
+ 
+Home, Camera, Task, Verification, Evaluation, History, Chatbot and Account. `[Add a screenshot or a short description for each]`
+ 
+## Privacy and security
+ 
+- Vision inference runs entirely on the device; camera frames are not stored or uploaded.
+- The chatbot sends text questions only.
+- API keys are read from `local.properties` at build time and kept out of source control. Note that a key compiled into an APK can be extracted, so use a restricted key or a small backend proxy for any public release.
 ## Known limitations
  
-Being honest about these makes the project more useful to anyone building on it:
- 
-- **Appearance, not motion.** The classifier recognises the visual end-state of a step, not the motion that produced it, so presenting a finished state can be credited.
-- **Unstable validation curves.** Training accuracy is high, but validation accuracy and loss fluctuate heavily, so the 95.24% figure should be confirmed on an independent, session-split test set.
-- **Small dataset.** 150 images per class from limited capture conditions; performance on other vehicles, phones and lighting is untested.
-- **Low acceptance threshold.** The live verification path uses a 0.15 confidence threshold, which is permissive for a 16-way classifier.
-- **Model coverage.** The verification mapping has branches for all four tasks, but check which task models are actually bundled in `assets/` for your build.
-- **Preprocessing check.** Confirm the rescaling used in training matches the rescaling inside the exported graph.
-- **Cleanup items.** An older `ARScreen` (different label set, 0.70 threshold, 5-frame consensus) is not wired into navigation; TensorFlow Lite is declared twice in the Gradle file with different versions.
+- **Action recognition sees appearance, not motion.** A finished state shown to the camera can be credited as a completed step.
+- **Validation curves in the action model training were unstable**, so the 95.24% figure should be confirmed on an independent, session-split test set.
+- **Datasets are small** (150 images per action class) and captured in limited conditions.
+- **Low live acceptance threshold** (0.15) for action verification, which is permissive for a 16-way classifier.
+- **Model coverage:** the verification mapping has branches for all four tasks, but confirm which task models are bundled in `assets/` for your build.
+- **AR guidance is not world-tracked**; overlays follow a fixed projection, not the physical part.
+- **Task and theory content is static** in Kotlin data files.
+- **Cleanup items:** an older `ARScreen` (different labels, 0.70 threshold, 5-frame consensus) is not wired into navigation; `DemoComponentDetector` and the Gemini-vision `ComponentAnalyzer` are unused; TensorFlow Lite is declared twice in the Gradle file with different versions; comments about input rescaling contradict each other and should be checked against the exported model.
 ## Roadmap
  
-- [ ] Train and bundle models for the battery, dipstick and spark plug tasks
-- [ ] Majority-vote or tolerance window instead of a strict 3 s hold
-- [ ] Hand-landmark check (for example MediaPipe) to verify motion
+- [ ] Bundle action models for all four tasks (or one shared 16-class model with a task selector)
+- [ ] Majority-vote or tolerance window in place of the strict 3 s hold
+- [ ] Hand-landmark check (for example MediaPipe) to verify motion, not just appearance
+- [ ] ARCore or marker-free tracking so overlays stay on the part
 - [ ] Session-based train/validation/test split and an independent test set
 - [ ] GPU or NNAPI delegate and faster frame conversion
+- [ ] Move task content to editable files or a backend
 - [ ] Controlled user study of learning outcomes
+- [ ] Remove dead code and unify dependencies
 ## Team and credits
  
 Group **RP26-IT-049**, B.Sc. (Hons) in Information Technology, SLIIT.
  
-- **Action Recognition module:** Jayalath S.P.S.C.K. (IT22231864)
-- Other components: `[team member names and components]`
-- Supervisor: `[name]`
+| Component | Owner |
+|-----------|-------|
+| Component identification | `[name]` |
+| Task recognition and instructions | `[name]` |
+| AR guidance | `[name]` |
+| Action recognition and task verification | Jayalath S.P.S.C.K. (IT22231864) |
+| Safety feedback and evaluation | `[name]` |
+ 
+Supervisor: `[name]`
+ 
 Built with TensorFlow Lite, CameraX, Jetpack Compose and the Gemini API.
  
 ## License
  
-`[Choose a license, for example MIT, and add a LICENSE file. Academic projects often keep the code private or all-rights-reserved until assessment is complete.]`
+`[Choose a license, for example MIT, and add a LICENSE file. Academic projects often stay private or all-rights-reserved until assessment is complete.]`
  
