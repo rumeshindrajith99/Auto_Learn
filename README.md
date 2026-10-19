@@ -224,7 +224,7 @@ Group **RP26-IT-049**, B.Sc. (Hons) in Information Technology, SLIIT.
 - Practicle evaluation and safety feedback: **Leelananda M.P.D.R.I** (IT21804960)
   
 - Supervisor: **Ms. Anjalee Gamage**
-- Co-Supervisor: **Uthpala samarakoon**
+- Co-Supervisor: **Ms. Uthpala samarakoon**
   
 Built with TensorFlow Lite, CameraX, Jetpack Compose
  
