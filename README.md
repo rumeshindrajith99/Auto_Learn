@@ -217,9 +217,15 @@ The action model was trained in Google Colab (notebook: `AutoLearn AR - Action R
 ## Team and credits
  
 Group **RP26-IT-049**, B.Sc. (Hons) in Information Technology, SLIIT.
- 
+
+- Component idetification: **Senevirathna S.D.** (IT22279934)
 - Action recognition and task verification: **Jayalath S.P.S.C.K.** (IT22231864)
+- AR supported task verification and instruction: **Weerakoon Y.P.B.** (IT22284570)
+- Practicle evaluation and safety feedback: **Leelananda M.P.D.R.I** (IT21804960)
+  
 - Supervisor: **Ms. Anjalee Gamage**
+- Co-Supervisor: **Uthpala samarakoon**
+  
 Built with TensorFlow Lite, CameraX, Jetpack Compose
  
 ## License
