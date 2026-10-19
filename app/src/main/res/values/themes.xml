@@ -1,0 +1,11 @@
+<resources>
+    <style name="Theme.AutoLearnAR" parent="android:style/Theme.Material.Light.NoActionBar">
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:statusBarColor">#F3F5F7</item>
+        <item name="android:navigationBarColor">#F3F5F7</item>
+        <item name="android:windowLightStatusBar">true</item>
+        <item name="android:colorAccent">#006ECF</item>
+        <item name="android:colorPrimary">#006ECF</item>
+        <item name="android:colorPrimaryDark">#2D3F54</item>
+    </style>
+</resources>

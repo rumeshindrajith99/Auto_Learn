@@ -1,0 +1,16 @@
+air_filter_closed
+cover_open
+inspection
+reinstall
+battery_connected
+battery_removed
+negative_unclamped
+positive_unclamped
+dipstick_inserted
+dipstick_pulled
+level_inspected
+wiped_clean
+boot_removed
+ignition_boot_on
+new_plug_seated
+plug_loosened
